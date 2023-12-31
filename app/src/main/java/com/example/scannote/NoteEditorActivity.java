@@ -13,6 +13,7 @@ import java.util.HashSet;
 public class NoteEditorActivity extends AppCompatActivity {
     int noteId;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
