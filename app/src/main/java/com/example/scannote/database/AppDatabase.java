@@ -12,7 +12,7 @@ import com.example.scannote.database.dao.UsersDao;
 import com.example.scannote.database.entity.Note;
 import com.example.scannote.database.entity.User;
 
-@Database(entities = {Note.class, User.class}, version = 1)
+@Database(entities = {Note.class, User.class}, version = 2)
 public abstract class AppDatabase extends RoomDatabase {
     private static final String TAG = "AppDatabase";
     private static AppDatabase instance;

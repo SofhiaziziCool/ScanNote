@@ -1,15 +1,12 @@
 package com.example.scannote;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 
 import com.example.scannote.adapter.NoteListAdapter;
 import com.example.scannote.database.entity.Note;
@@ -19,42 +16,57 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NoteListAdapter.OnNoteListener {
 
-    public static String SELECTED_NOTE = "selected_note";
-   private RecyclerView mNoteListRv;
-   private FloatingActionButton mAddNoteFloatingBtn;
-   NoteListAdapter noteListAdapter;
-   MainActivityViewModel mainActivityViewModel;
-   ArrayList<Note> noteList = new ArrayList<>();
+    // Constants
+    private static final String TAG = "MainActivity";
+    public static final String SELECTED_NOTE = "SLNTE";
+
+    // Vars
+    private final ArrayList<Note> mNotes = new ArrayList<>();
+    private MainActivityViewModel mMainActivityViewModel;
+    private NoteListAdapter mNoteListAdapter;
+
+    //UI Views
+    private RecyclerView mRecyclerView;
+    private FloatingActionButton mAddNoteBtn;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mainActivityViewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+        mMainActivityViewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
-        mNoteListRv = findViewById(R.id.note_list_rv);
-        mAddNoteFloatingBtn = findViewById(R.id.add_note_fab);
+        mRecyclerView = findViewById(R.id.note_list_rv);
+        mAddNoteBtn = findViewById(R.id.add_note_fab);
 
-        mAddNoteFloatingBtn.setOnClickListener(view -> {
+        mAddNoteBtn.setOnClickListener(view -> {
             Intent intent = new Intent(this, NoteEditorActivity.class);
             startActivity(intent);
         });
 
-        mainActivityViewModel.getAllNotes().observe(this, this::updateNoteList);
+        mMainActivityViewModel.getAllNotes().observe(this, this::updateNoteList);
 
-        noteListAdapter = new NoteListAdapter(noteList);
+        mNoteListAdapter = new NoteListAdapter(mNotes, this);
         LinearLayoutManager lm = new LinearLayoutManager(this);
-        mNoteListRv.setLayoutManager(lm);
-        mNoteListRv.setAdapter(noteListAdapter);
-
+        lm.setReverseLayout(true);
+        lm.setStackFromEnd(true);
+        mRecyclerView.setLayoutManager(lm);
+        mRecyclerView.setAdapter(mNoteListAdapter);
     }
 
     private void updateNoteList(List<Note> notes) {
-        noteList.clear();
-        noteList.addAll(notes);
-        noteListAdapter.notifyDataSetChanged();
+        mNotes.clear();
+        mNotes.addAll(notes);
+        mNoteListAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onNoteClick(int position) {
+        Intent intent = new Intent(this, NoteEditorActivity.class);
+        intent.putExtra(SELECTED_NOTE, mNotes.get(position));
+        startActivity(intent);
     }
 }
