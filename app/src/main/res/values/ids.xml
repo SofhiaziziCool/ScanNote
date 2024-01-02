@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="centerline" type="id">centerline</item>
+    <item name="loginemail" type="id">loginemail</item>
+    <item name="loginpassword" type="id">loginpassword</item>
+    <item name="login" type="id">login</item>
+    <item name="gotoforgotpassword" type="id">gotoforgotpassword</item>
+    <item name="gotosignup" type="id">gotosignup</item>
+</resources>

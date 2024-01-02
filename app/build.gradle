@@ -1,5 +1,7 @@
+
 plugins {
     id 'com.android.application'
+    id 'com.huawei.agconnect'
 }
 
 android {
@@ -8,12 +10,14 @@ android {
 
     defaultConfig {
         applicationId "com.example.scannote"
-        minSdk 16
+        minSdk 19
         targetSdk 34
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        resourceConfigurations += ['en', 'zh-rCN', 'ms']
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -34,6 +38,18 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
+    implementation 'com.huawei.agconnect:agconnect-core:1.9.1.300'
+    implementation 'com.huawei.hms:hmscoreinstaller:6.6.0.300'
+    implementation 'com.huawei.hms:ml-computer-vision-ocr:3.11.0.301'
+    implementation 'com.huawei.hms:ml-computer-vision-ocr-latin-model:3.11.0.301'
+    implementation 'com.huawei.hms:ml-computer-vision-ocr-jk-model:3.11.0.301'
+    implementation 'com.huawei.hms:ml-computer-vision-ocr-cn-model:3.11.0.301'
+
+    implementation 'com.huawei.hms:ml-computer-model-executor:3.11.0.301'
+    implementation 'mindspore:mindspore-lite:5.0.5.300'
+    implementation "io.realm:realm-gradle-plugin:10.13.3-transformer-api"
+    implementation 'androidx.multidex:multidex:2.0.1'
+
     // Room
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
@@ -43,3 +59,17 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
+
+"R.string.hms*"
+"R.string.connect_server_fail_prompt_toast"
+"R.string.getting_message_fail_prompt_toast"
+"R.string.no_available_network_prompt_toast"
+"R.string.third_app_*"
+"R.string.upsdk_*"
+"R.layout.hms*"
+"R.layout.upsdk_*"
+"R.drawable.upsdk*"
+"R.color.upsdk*"
+"R.dimen.upsdk*"
+"R.style.upsdk*"
+"R.string.agc*"
