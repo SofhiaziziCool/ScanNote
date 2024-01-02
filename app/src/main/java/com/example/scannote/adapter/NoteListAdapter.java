@@ -32,6 +32,7 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Note noteData = noteList.get(position);
+        holder.contentPreviewTv.setText(noteData.getContents());
         holder.titleTv.setText(noteData.getTitle());
         holder.timestampTv.setText(noteData.getTimeStamp());
     }
@@ -42,12 +43,13 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.ViewHo
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        TextView titleTv, timestampTv;
+        TextView titleTv, timestampTv, contentPreviewTv;
         OnNoteListener onNoteListener;
         public ViewHolder(@NonNull View itemView, OnNoteListener onNoteListener) {
             super(itemView);
             this.titleTv = itemView.findViewById(R.id.title_tv);
             this.timestampTv = itemView.findViewById(R.id.timeStamp_tv);
+            this.contentPreviewTv = itemView.findViewById(R.id.content_preview_tv);
             this.onNoteListener = onNoteListener;
             itemView.setOnClickListener(this);
         }
