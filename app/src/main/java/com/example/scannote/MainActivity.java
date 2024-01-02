@@ -2,6 +2,7 @@ package com.example.scannote;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -50,9 +51,7 @@ public class MainActivity extends AppCompatActivity implements NoteListAdapter.O
         mMainActivityViewModel.getAllNotes().observe(this, this::updateNoteList);
 
         mNoteListAdapter = new NoteListAdapter(mNotes, this);
-        LinearLayoutManager lm = new LinearLayoutManager(this);
-        lm.setReverseLayout(true);
-        lm.setStackFromEnd(true);
+        GridLayoutManager lm = new GridLayoutManager(this, 3);
         mRecyclerView.setLayoutManager(lm);
         mRecyclerView.setAdapter(mNoteListAdapter);
     }
