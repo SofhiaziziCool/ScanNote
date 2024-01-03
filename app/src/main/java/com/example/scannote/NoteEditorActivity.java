@@ -10,7 +10,6 @@ import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -169,8 +168,30 @@ public class NoteEditorActivity extends AppCompatActivity {
         // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
         MLFrame frame = MLFrame.fromBitmap(bitmap);
         Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(text -> Toast.makeText(NoteEditorActivity.this, text.getStringValue(), Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> {
-            // Processing logic for recognition failure.
+        task.addOnSuccessListener(new OnSuccessListener<MLText>() {
+            @Override
+            public void onSuccess(MLText text) {
+                // Processing for successful recognition.
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                // Processing logic for recognition failure.
+            }
+
+            Context context = getApplicationContext();
+            MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
+            SparseArray<MLText.Block> blocks = analyzer.analyseFrame(frame);
+
+            try {
+                if (analyzer != null) {
+                    analyzer.stop();
+                }
+            } catch (IOException e) {
+                // Exception handling.
+            }
+
+
         });
 
     }
