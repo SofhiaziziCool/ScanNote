@@ -7,27 +7,30 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.MediaStore;
-import android.util.SparseArray;
-import android.widget.ImageView;
-
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.bumptech.glide.Glide;
 import com.example.scannote.database.entity.Note;
 import com.example.scannote.util.DateUtility;
 import com.example.scannote.viewmodel.NoteEditorActivityViewModel;
-
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.mlsdk.MLAnalyzerFactory;
 import com.huawei.hms.mlsdk.common.LensEngine;
@@ -38,36 +41,35 @@ import com.huawei.hms.mlsdk.text.MLText;
 import com.huawei.hms.mlsdk.text.MLTextAnalyzer;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 
 public class NoteEditorActivity extends AppCompatActivity implements TextWatcher {
 
-    //Huawei
+    // Constants
+    public final static String NEW_NOTE_TITLE = "New Note";
+    private static final String TAG = "NoteEditorActivity";
     private static final int CAMERA_PERMISSION_CODE = 1001;
     private static final int PICK_IMAGE_REQUEST = 1002;
     private static final int resultCode = -1;
-    private Uri mImageUri;
-    private Bitmap bitmap;
-    Button setImage, analyseImage;
-    ImageView imageView;
-
-    // Constants
-    public final static String NEW_NOTE_TITLE = "New Note";
     private final static long DELAY_MILLIS = 2000;
 
+    //UI Views
+    Button setImage, analyseImage;
+    ImageView imageView;
+    EditText mNoteTitleTv, mNoteContentTv;
+    Button saveBtn;
+
     //Vars
+    private Bitmap bitmap;
+    private Uri mImageUri;
+    private final Handler handler = new Handler();
     private NoteEditorActivityViewModel noteEditorActivityViewModel;
     private boolean mIsNewNote;
     private Note mInitialNote;
     private Note mFinalNote;
-    private final Handler handler = new Handler();
     private final Runnable saveNoteRunnable = this::saveNoteChanges;
-
-
-    //UI Views
-    EditText mNoteTitleTv, mNoteContentTv;
-    Button saveBtn;
-
+    ActivityResultLauncher<String> imagePickerActivityLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,10 +81,21 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         mNoteTitleTv = findViewById(R.id.note_title_tv);
         mNoteContentTv = findViewById(R.id.note_content_tv);
         saveBtn = findViewById(R.id.save_btn);
-
         setImage = findViewById(R.id.take_pic);
         imageView = (ImageView) findViewById(R.id.set_img);
+
         analyseImage = findViewById(R.id.analyse_pic);
+        imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+            mImageUri = uri;
+            Log.d(TAG, "onCreate: " + uri.getPath());
+            if (uri != null) {
+                Glide
+                        .with(this)
+                        .load(mImageUri.getPath())
+                        .centerCrop()
+                        .into(imageView);
+            }
+        });
 
         if (checkForIntent()) {
             setInitialNoteProperties();
@@ -92,125 +105,20 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
         mNoteTitleTv.addTextChangedListener(this);
         mNoteContentTv.addTextChangedListener(this);
-
         saveBtn.setOnClickListener(view -> {
             setEditedNoteProperties();
             saveNoteChanges();
         });
-
-        setImage.setOnClickListener(v -> requestBitmap());
-
+        setImage.setOnClickListener(v -> requestImagePicker());
         analyseImage.setOnClickListener(v -> testAnalyze());
 
-        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-                || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             requestCameraPermission();
         }
 
     }
 
-    public void requestBitmap() {
-        Intent intent;
-        if (Build.VERSION.SDK_INT < 20) {
-            intent = new Intent(Intent.ACTION_GET_CONTENT);
-        } else {
-            intent = new Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        }
-        intent.setType("image/*");
-        startActivityForResult(Intent.createChooser(intent, "Select Photo"), PICK_IMAGE_REQUEST);
-    }
-
-    public void testAnalyze() {
-
-        Context context = getApplicationContext();
-        MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
-        //SparseArray<MLText.Block> blocks = analyzer.analyseFrame(frame);
-
-        //text recognition from camera on device
-        // Method 2: Use the custom parameter MLTextAnalyzer.Factory to configure the text analyzer. Other supported languages can be recognized.
-
-        MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
-// Specify languages that can be recognized.
-        factory.setLanguage("en");
-        //MLTextAnalyzer analyzer = factory.create();
-
-        analyzer.setTransactor(new OcrDetectorProcessor());
-
-        LensEngine lensEngine = new LensEngine.Creator(getApplicationContext(), analyzer)
-                .setLensType(LensEngine.BACK_LENS)
-                .applyDisplayDimension(1440, 1080)
-                .applyFps(30.0f)
-                .enableAutomaticFocus(true)
-                .create();
-
-        /*SurfaceView mSurfaceView = findViewById(R.id.surface_view);
-        try {
-            lensEngine.run(mSurfaceView.getHolder());
-        } catch (IOException e) {
-            // Exception handling logic.
-        }*/
-
-        try {
-            analyzer.stop();
-        } catch (IOException e) {
-            // Exception handling.
-        }
-
-        if (lensEngine != null) {
-            lensEngine.release();
-        }
-
-        //text recognition from images on device
-        MLLocalTextSetting setting = new MLLocalTextSetting.Factory()
-                .setOCRMode(MLLocalTextSetting.OCR_DETECT_MODE)
-                // Specify languages that can be recognized.
-                .setLanguage("en")
-                .create();
-        MLTextAnalyzer analyzer1 = MLAnalyzerFactory.getInstance().getLocalTextAnalyzer(setting);
-
-        // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
-        MLFrame frame = MLFrame.fromBitmap(bitmap);
-        Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(text -> Toast.makeText(NoteEditorActivity.this, text.getStringValue(), Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> {
-            // Processing logic for recognition failure.
-        });
-
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode != CAMERA_PERMISSION_CODE) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            return;
-        }
-        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        }
-    }
-
-
-
-    public static class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
-
-        @Override
-        public void transactResult(MLAnalyzer.Result<MLText.Block> results) {
-            SparseArray<MLText.Block> items = results.getAnalyseList();
-            // Determine detection result processing as required. Note that only the detection results are processed.
-            // Other detection-related APIs provided by ML Kit cannot be called.
-        }
-        @Override
-        public void destroy() {
-            // Callback method used to release resources when the detection ends.
-        }
-
-
-    }
-
-
-
-
+    // NOTE START
     private boolean checkForIntent() {
         if (getIntent().hasExtra(MainActivity.SELECTED_NOTE)) {
             mInitialNote = getIntent().getParcelableExtra(MainActivity.SELECTED_NOTE);
@@ -260,6 +168,88 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         mFinalNote.setTimeStamp(DateUtility.getCurrentTimeStamp());
     }
 
+    // NOTE END
+
+
+    // PERMISSION
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode != CAMERA_PERMISSION_CODE) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+        }
+    }
+
+    private void requestCameraPermission() {
+        final String[] permissions = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA) && !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) && !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            ActivityCompat.requestPermissions(this, permissions, CAMERA_PERMISSION_CODE);
+        }
+    }
+
+    // PERMISSION END
+
+    public void requestImagePicker() {
+        imagePickerActivityLauncher.launch("image/*");
+    }
+
+
+    //HUAWEI ML KIT
+    public void testAnalyze() {
+        Context context = getApplicationContext();
+        MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
+        MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
+        factory.setLanguage("en");
+        analyzer.setTransactor(new OcrDetectorProcessor());
+        LensEngine lensEngine = new LensEngine.Creator(getApplicationContext(), analyzer).setLensType(LensEngine.BACK_LENS).applyDisplayDimension(1440, 1080).applyFps(30.0f).enableAutomaticFocus(true).create();
+        try {
+            analyzer.stop();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (lensEngine != null) {
+            lensEngine.release();
+        }
+
+        MLLocalTextSetting setting = new MLLocalTextSetting.Factory().setOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("en").create();
+        MLTextAnalyzer analyzer1 = MLAnalyzerFactory.getInstance().getLocalTextAnalyzer(setting);
+
+        MLFrame frame = MLFrame.fromBitmap(bitmap);
+        Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
+        task.addOnSuccessListener(text -> Toast.makeText(NoteEditorActivity.this, text.getStringValue(), Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> {
+            Toast.makeText(context, "Processing logic for recognition failure", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "testAnalyze: " + e.getMessage() );
+            // Processing logic for recognition failure.
+        });
+    }
+
+    public static class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
+
+        @Override
+        public void transactResult(MLAnalyzer.Result<MLText.Block> results) {
+            SparseArray<MLText.Block> items = results.getAnalyseList();
+            Log.d(TAG, "transactResult: " + items.toString());
+            // Determine detection result processing as required. Note that only the detection results are processed.
+            // Other detection-related APIs provided by ML Kit cannot be called.
+        }
+
+        @Override
+        public void destroy() {
+            Log.d(TAG, "destroy: OcrDetectorProcessor destroyed");
+            // Callback method used to release resources when the detection ends.
+        }
+    }
+
+    //HUAWEI ML KIT END
+
+
+
+    // TEXT WATCHER
     @Override
     public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
@@ -276,18 +266,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     public void afterTextChanged(Editable editable) {
 
     }
-
-    //Starts Huawei integration
-    private void requestCameraPermission() {
-        final String[] permissions = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
-
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA) &&
-                !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) &&
-                !ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            ActivityCompat.requestPermissions(this, permissions, CAMERA_PERMISSION_CODE);
-
-        }
-    }
-
+    // TEXT WATCHER END
 
 }

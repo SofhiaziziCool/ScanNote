@@ -18,10 +18,20 @@
         android:text="@string/all_notes"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:layout_marginTop="10dp"
         android:textColor="@color/black"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         />
+
+    <Button
+        android:id="@+id/sign_out_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sign out"
+        app:layout_constraintBottom_toBottomOf="@+id/all_notes_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/all_notes_header" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/note_list_rv"
