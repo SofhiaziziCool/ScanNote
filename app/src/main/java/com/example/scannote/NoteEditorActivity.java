@@ -28,8 +28,6 @@ import com.example.scannote.database.entity.Note;
 import com.example.scannote.util.DateUtility;
 import com.example.scannote.viewmodel.NoteEditorActivityViewModel;
 
-import com.huawei.hmf.tasks.OnFailureListener;
-import com.huawei.hmf.tasks.OnSuccessListener;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.mlsdk.MLAnalyzerFactory;
 import com.huawei.hms.mlsdk.common.LensEngine;
@@ -87,10 +85,8 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         analyseImage = findViewById(R.id.analyse_pic);
 
         if (checkForIntent()) {
-            // Go to edit note
             setInitialNoteProperties();
         } else {
-            // Go to new note
             setNewNoteProperties();
         }
 
@@ -124,7 +120,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         }
         intent.setType("image/*");
-        //startActivityForResult actually deprecated
         startActivityForResult(Intent.createChooser(intent, "Select Photo"), PICK_IMAGE_REQUEST);
     }
 
@@ -158,13 +153,12 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             // Exception handling logic.
         }*/
 
-        if (analyzer != null) {
-            try {
-                analyzer.stop();
-            } catch (IOException e) {
-                // Exception handling.
-            }
+        try {
+            analyzer.stop();
+        } catch (IOException e) {
+            // Exception handling.
         }
+
         if (lensEngine != null) {
             lensEngine.release();
         }
@@ -180,19 +174,8 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
         MLFrame frame = MLFrame.fromBitmap(bitmap);
         Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(new OnSuccessListener<MLText>() {
-            @Override
-            public void onSuccess(MLText text) {
-                MLText tt = text;
-                Toast.makeText(NoteEditorActivity.this, tt.getStringValue(), Toast.LENGTH_SHORT).show();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                // Processing logic for recognition failure.
-            }
-
-
+        task.addOnSuccessListener(text -> Toast.makeText(NoteEditorActivity.this, text.getStringValue(), Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> {
+            // Processing logic for recognition failure.
         });
 
     }
