@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "402913553118",
+    "project_id": "scannote-86ef9",
+    "storage_bucket": "scannote-86ef9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:402913553118:android:3b53327262dc2d9a26f04f",
+        "android_client_info": {
+          "package_name": "com.example.scannote"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "402913553118-vist200de7dngpju9j7a1bs791bkelb2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMqOAAIIRudBmYG6KKaCbrBW9Cw65TMH0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "402913553118-vist200de7dngpju9j7a1bs791bkelb2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
