@@ -9,8 +9,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.util.SparseArray;
-import android.view.SurfaceView;
-import android.view.View;
 import android.widget.ImageView;
 
 import android.os.Bundle;
@@ -88,21 +86,26 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         imageView = (ImageView) findViewById(R.id.set_img);
         analyseImage = findViewById(R.id.analyse_pic);
 
-        setImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                requestBitmap();
-            }
+        if (checkForIntent()) {
+            // Go to edit note
+            setInitialNoteProperties();
+        } else {
+            // Go to new note
+            setNewNoteProperties();
+        }
+
+        mNoteTitleTv.addTextChangedListener(this);
+        mNoteContentTv.addTextChangedListener(this);
+
+        saveBtn.setOnClickListener(view -> {
+            setEditedNoteProperties();
+            saveNoteChanges();
         });
 
-        analyseImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                testAnalyze();
-            }
-        });
+        setImage.setOnClickListener(v -> requestBitmap());
 
-        // Check whether the app has the camera permission.
+        analyseImage.setOnClickListener(v -> testAnalyze());
+
         if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
                 || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                 || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
@@ -192,22 +195,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
         });
 
-        if (checkForIntent()) {
-            // Go to edit note
-            setInitialNoteProperties();
-        } else {
-            // Go to new note
-            setNewNoteProperties();
-        }
-
-        mNoteTitleTv.addTextChangedListener(this);
-        mNoteContentTv.addTextChangedListener(this);
-
-        saveBtn.setOnClickListener(view -> {
-            setEditedNoteProperties();
-            saveNoteChanges();
-        });
-
     }
 
     @Override
@@ -222,7 +209,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
 
 
-    public class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
+    public static class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
 
         @Override
         public void transactResult(MLAnalyzer.Result<MLText.Block> results) {

@@ -3,7 +3,6 @@ package com.example.scannote;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
@@ -63,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements NoteListAdapter.O
         mMainActivityViewModel.getAllNotes().observe(this, this::updateNoteList);
 
         mNoteListAdapter = new NoteListAdapter(mNotes, this);
-        GridLayoutManager lm = new GridLayoutManager(this, 3);
+        GridLayoutManager lm = new GridLayoutManager(this, 2);
         mRecyclerView.setLayoutManager(lm);
         mRecyclerView.setAdapter(mNoteListAdapter);
     }
