@@ -47,8 +47,8 @@ import java.util.Date;
 public class NoteEditorActivity extends AppCompatActivity implements TextWatcher {
 
     //Huawei
-    private static final int CAMERA_PERMISSION_CODE = 1;
-    private static final int PICK_IMAGE_REQUEST = 2;
+    private static final int CAMERA_PERMISSION_CODE = 1001;
+    private static final int PICK_IMAGE_REQUEST = 1002;
     private static final int resultCode = -1;
     private Uri mImageUri;
     private Bitmap bitmap;
@@ -108,9 +108,89 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
                 || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             requestCameraPermission();
         }
-        {
 
+    }
+
+    public void requestBitmap() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT < 20) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+        } else {
+            intent = new Intent(
+                    Intent.ACTION_PICK,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         }
+        intent.setType("image/*");
+        //startActivityForResult actually deprecated
+        startActivityForResult(Intent.createChooser(intent, "Select Photo"), PICK_IMAGE_REQUEST);
+    }
+
+    public void testAnalyze() {
+
+        Context context = getApplicationContext();
+        MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
+        //SparseArray<MLText.Block> blocks = analyzer.analyseFrame(frame);
+
+        //text recognition from camera on device
+        // Method 2: Use the custom parameter MLTextAnalyzer.Factory to configure the text analyzer. Other supported languages can be recognized.
+
+        MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
+// Specify languages that can be recognized.
+        factory.setLanguage("en");
+        //MLTextAnalyzer analyzer = factory.create();
+
+        analyzer.setTransactor(new OcrDetectorProcessor());
+
+        LensEngine lensEngine = new LensEngine.Creator(getApplicationContext(), analyzer)
+                .setLensType(LensEngine.BACK_LENS)
+                .applyDisplayDimension(1440, 1080)
+                .applyFps(30.0f)
+                .enableAutomaticFocus(true)
+                .create();
+
+        /*SurfaceView mSurfaceView = findViewById(R.id.surface_view);
+        try {
+            lensEngine.run(mSurfaceView.getHolder());
+        } catch (IOException e) {
+            // Exception handling logic.
+        }*/
+
+        if (analyzer != null) {
+            try {
+                analyzer.stop();
+            } catch (IOException e) {
+                // Exception handling.
+            }
+        }
+        if (lensEngine != null) {
+            lensEngine.release();
+        }
+
+        //text recognition from images on device
+        MLLocalTextSetting setting = new MLLocalTextSetting.Factory()
+                .setOCRMode(MLLocalTextSetting.OCR_DETECT_MODE)
+                // Specify languages that can be recognized.
+                .setLanguage("en")
+                .create();
+        MLTextAnalyzer analyzer1 = MLAnalyzerFactory.getInstance().getLocalTextAnalyzer(setting);
+
+        // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
+        MLFrame frame = MLFrame.fromBitmap(bitmap);
+        Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
+        task.addOnSuccessListener(new OnSuccessListener<MLText>() {
+            @Override
+            public void onSuccess(MLText text) {
+                MLText tt = text;
+                Toast.makeText(NoteEditorActivity.this, tt.getStringValue(), Toast.LENGTH_SHORT).show();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(Exception e) {
+                // Processing logic for recognition failure.
+            }
+
+
+        });
 
         if (checkForIntent()) {
             // Go to edit note
@@ -129,6 +209,37 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         });
 
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode != CAMERA_PERMISSION_CODE) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        }
+    }
+
+
+
+    public class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
+
+        @Override
+        public void transactResult(MLAnalyzer.Result<MLText.Block> results) {
+            SparseArray<MLText.Block> items = results.getAnalyseList();
+            // Determine detection result processing as required. Note that only the detection results are processed.
+            // Other detection-related APIs provided by ML Kit cannot be called.
+        }
+        @Override
+        public void destroy() {
+            // Callback method used to release resources when the detection ends.
+        }
+
+
+    }
+
+
+
 
     private boolean checkForIntent() {
         if (getIntent().hasExtra(MainActivity.SELECTED_NOTE)) {
@@ -208,114 +319,5 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode != CAMERA_PERMISSION_CODE) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            return;
-        }
-        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        }
-    }
 
-    public void requestBitmap(){
-        Intent intent;
-        if (Build.VERSION.SDK_INT < 20){
-            intent = new Intent(Intent.ACTION_GET_CONTENT);
-        }else{
-            intent = new Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        }
-        intent.setType("image/*");
-        //startActivityForResult actually deprecated
-        startActivityForResult(Intent.createChooser(intent, "Select Photo"), PICK_IMAGE_REQUEST);
-    }
-
-    public void testAnalyze() {
-
-        Context context = getApplicationContext();
-        MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
-        //SparseArray<MLText.Block> blocks = analyzer.analyseFrame(frame);
-
-        //text recognition from camera on device
-        // Method 2: Use the custom parameter MLTextAnalyzer.Factory to configure the text analyzer. Other supported languages can be recognized.
-
-        MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
-// Specify languages that can be recognized.
-        factory.setLanguage("en");
-        //MLTextAnalyzer analyzer = factory.create();
-
-        analyzer.setTransactor(new OcrDetectorProcessor());
-
-        LensEngine lensEngine = new LensEngine.Creator(getApplicationContext(),analyzer)
-                .setLensType(LensEngine.BACK_LENS)
-                .applyDisplayDimension(1440, 1080)
-                .applyFps(30.0f)
-                .enableAutomaticFocus(true)
-                .create();
-
-        /*SurfaceView mSurfaceView = findViewById(R.id.surface_view);
-        try {
-            lensEngine.run(mSurfaceView.getHolder());
-        } catch (IOException e) {
-            // Exception handling logic.
-        }*/
-
-        if (analyzer != null) {
-            try {
-                analyzer.stop();
-            } catch (IOException e) {
-                // Exception handling.
-            }
-        }
-        if (lensEngine != null) {
-            lensEngine.release();
-        }
-
-        //text recognition from images on device
-        MLLocalTextSetting setting = new MLLocalTextSetting.Factory()
-                .setOCRMode(MLLocalTextSetting.OCR_DETECT_MODE)
-                // Specify languages that can be recognized.
-                .setLanguage("en")
-                .create();
-        MLTextAnalyzer analyzer1 = MLAnalyzerFactory.getInstance().getLocalTextAnalyzer(setting);
-
-        // Create an MLFrame object using the bitmap, which is the image data in bitmap format.
-        MLFrame frame = MLFrame.fromBitmap(bitmap);
-        Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(new OnSuccessListener<MLText>() {
-            @Override
-            public void onSuccess(MLText text) {
-                MLText tt = text;
-                Toast.makeText(NoteEditorActivity.this,tt.getStringValue(),Toast.LENGTH_SHORT).show();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                // Processing logic for recognition failure.
-            }
-
-
-
-        });
-
-
-
-    }
-    public class OcrDetectorProcessor implements MLAnalyzer.MLTransactor<MLText.Block> {
-
-        @Override
-        public void transactResult(MLAnalyzer.Result<MLText.Block> results) {
-            SparseArray<MLText.Block> items = results.getAnalyseList();
-            // Determine detection result processing as required. Note that only the detection results are processed.
-            // Other detection-related APIs provided by ML Kit cannot be called.
-        }
-        @Override
-        public void destroy() {
-            // Callback method used to release resources when the detection ends.
-        }
-
-
-    }
 }
