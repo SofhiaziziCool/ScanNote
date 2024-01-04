@@ -4,4 +4,8 @@
     <string name="password">Password</string>
     <string name="new_note">New Note</string>
     <string name="all_notes">All notes</string>
+    <string name="login">Login</string>
+    <string name="welcome_back">Welcome Back!</string>
+    <string name="log_in_to_continue">Log In To Continue</string>
+    <string name="new_user_click_to_register">New User? click to register</string>
 </resources>
