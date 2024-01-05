@@ -4,7 +4,7 @@ plugins {
     //id 'com.huawei.agconnect'
 }
 
-android
+android {
     namespace 'com.example.scannote'
     compileSdk 34
 
@@ -22,15 +22,17 @@ android
 
     signingConfigs {
         release {
-            storeFile file(C:/Users(your_keystore_file.jks))
+            storeFile file(C:/Users)
             storePassword 140510
             keyAlias your_alias_name
             keyPassword 140510
         }
     }
 
+
     buildTypes {
         release {
+
             signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -90,4 +92,6 @@ dependencies {
 "R.color.upsdk*"
 "R.dimen.upsdk*"
 "R.style.upsdk*"
-"R.string.agc*"}
+"R.string.agc*"
+
+    }}
