@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity implements NoteListAdapter.O
 
     // Constants
     private static final String TAG = "MainActivity";
-    public static String API_KEY = "5C95750ED6D42CCC6EFA0778ED082FD192341718BE02731F03CC5617D9D9A94F";
+    public static String API_KEY = "DAEDAMI7lg9IN8WopLGAJB57mN5jCvRf9tiNopPxcDqvbYO+r7sJSIL66ejUmbCwHrURV/++7Nyumt+GUDJwrMuUOjMn6z8+eRe2MQ==";
     public static final String SELECTED_NOTE = "SLNTE";
 
     // Vars
