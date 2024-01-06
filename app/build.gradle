@@ -8,6 +8,20 @@ android {
     namespace 'com.example.scannote'
     compileSdk 34
 
+    signingConfigs {
+        release {
+            // Signing certificate.
+            storeFile file("C:/Users/your_keystore_file.jks")
+            // Keystore password.
+            storePassword "140510"
+            // Alias.
+            keyAlias "your_key_alias"
+            // Key password.
+            keyPassword "140510"
+            v2SigningEnabled true
+        }
+    }
+
     defaultConfig {
         applicationId "com.example.scannote"
         minSdk 19
@@ -39,7 +53,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     implementation 'com.huawei.agconnect:agconnect-core:1.9.1.300'
-    implementation 'com.huawei.hms:hmscoreinstaller:6.6.0.300'
     implementation 'com.huawei.hms:ml-computer-vision-ocr:3.11.0.301'
     implementation 'com.huawei.hms:ml-computer-vision-ocr-latin-model:3.11.0.301'
     implementation 'com.huawei.hms:ml-computer-vision-ocr-jk-model:3.11.0.301'
@@ -50,6 +63,9 @@ dependencies {
     implementation 'mindspore:mindspore-lite:5.0.5.300'
     implementation "io.realm:realm-gradle-plugin:10.13.3-transformer-api"
     implementation 'androidx.multidex:multidex:2.0.1'
+
+    implementation 'com.huawei.hms:hwid:6.12.0.300'
+    implementation 'com.huawei.hms:hmscoreinstaller:6.11.0.301'
 
     // Glide
     implementation 'com.github.bumptech.glide:glide:4.12.0'
@@ -82,3 +98,5 @@ dependencies {
 "R.dimen.upsdk*"
 "R.style.upsdk*"
 "R.string.agc*"
+
+
