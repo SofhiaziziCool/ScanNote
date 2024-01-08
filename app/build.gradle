@@ -8,6 +8,11 @@ android {
     namespace 'com.example.scannote'
     compileSdk 34
 
+  /*  lintOptions {
+        warningsAsErrors true
+        additionalCheckOptions ['deprecation']
+    }*/
+
     signingConfigs {
         release {
             // Signing certificate.
@@ -24,7 +29,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.scannote"
-        minSdk 19
+        minSdk 33
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -83,6 +88,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation "com.google.firebase:firebase-auth"
     implementation 'com.firebaseui:firebase-ui-auth:8.0.2'
+
+    implementation 'com.github.dhaval2404:imagepicker:2.1'
 }
 
 "R.string.hms*"

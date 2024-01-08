@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -23,6 +25,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -31,6 +34,7 @@ import com.bumptech.glide.Glide;
 import com.example.scannote.database.entity.Note;
 import com.example.scannote.util.DateUtility;
 import com.example.scannote.viewmodel.NoteEditorActivityViewModel;
+import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.mlsdk.MLAnalyzerFactory;
 import com.huawei.hms.mlsdk.common.LensEngine;
@@ -43,6 +47,7 @@ import com.huawei.hms.mlsdk.text.MLTextAnalyzer;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 public class NoteEditorActivity extends AppCompatActivity implements TextWatcher {
 
@@ -76,15 +81,18 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note_editor);
 
+        //Objects.requireNonNull(getSupportActionBar()).setBackgroundDrawable(new ColorDrawable(getColor(R.color.black)));
+
         noteEditorActivityViewModel = new ViewModelProvider(this).get(NoteEditorActivityViewModel.class);
 
         mNoteTitleTv = findViewById(R.id.note_title_tv);
         mNoteContentTv = findViewById(R.id.note_content_tv);
         saveBtn = findViewById(R.id.save_btn);
         setImage = findViewById(R.id.take_pic);
-        imageView = (ImageView) findViewById(R.id.set_img);
+        imageView = (ImageView) findViewById(R.id.imageView);
 
         analyseImage = findViewById(R.id.analyse_pic);
+
         imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
             mImageUri = uri;
             Log.d(TAG, "onCreate: " + uri.getPath());
@@ -109,7 +117,18 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             setEditedNoteProperties();
             saveNoteChanges();
         });
-        setImage.setOnClickListener(v -> requestImagePicker());
+        //setImage.setOnClickListener(v -> requestImagePicker());
+        setImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ImagePicker.with(NoteEditorActivity.this)
+                        .crop()	    			//Crop image(Optional), Check Customization for more option
+                        .compress(1024)			//Final image size will be less than 1 MB(Optional)
+                        .maxResultSize(1080, 1080)	//Final image resolution will be less than 1080 x 1080(Optional)
+                        .start();
+            }
+        });
+
         analyseImage.setOnClickListener(v -> testAnalyze());
 
         if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
@@ -268,4 +287,11 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     }
     // TEXT WATCHER END
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Uri uri = data.getData();
+        imageView.setImageURI(uri);
+    }
 }

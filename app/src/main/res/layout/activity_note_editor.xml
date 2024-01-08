@@ -15,9 +15,11 @@
         android:text="New note"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="MissingConstraints" />
 
     <!--Adding Edit Text To add data to List View-->
+
 
     <EditText
         android:id="@+id/note_content_tv"
@@ -32,14 +34,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/note_title_tv"
+        app:layout_constraintTop_toBottomOf="@+id/note_title_tv"
         app:layout_constraintVertical_bias="0.0" />
 
     <Button
         android:id="@+id/take_pic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="52dp"
         android:text="Pick Photo"
+        app:layout_constraintHorizontal_bias="0.812"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -49,17 +53,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Analyze Photo"
+        app:layout_constraintBottom_toBottomOf="@+id/note_content_tv"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/set_img" />
-
-    <ImageView
-        android:id="@+id/set_img"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/take_pic" />
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintVertical_bias="0.084" />
 
     <Button
         android:id="@+id/save_btn"
@@ -68,5 +66,17 @@
         android:text="save"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imageView"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_marginTop="48dp"
+        android:background="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.504"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/note_title_tv"
+        app:srcCompat="@drawable/baseline_image_24" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

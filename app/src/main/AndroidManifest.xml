@@ -1,33 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <!--Camera permission-->
+    <!-- Camera permission -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!--Internet permission-->
+
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- Internet permission -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Write permission -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- Network status obtaining permission -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- check network permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!--Write permission-->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!--Network status obtaining permission-->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--check network permissions-->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!--check wifi state-->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- check wifi state -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <meta-data
         android:name="com.huawei.hms.ml.DEPENDENCY"
-        android:value= "ocr"/>
+        android:value="ocr" />
 
     <application
-        android:usesCleartextTraffic="true"
         android:allowBackup="true"
-        tools:replace="android:allowBackup"
-
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -35,7 +27,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ScanNote"
+        android:usesCleartextTraffic="true"
+        tools:replace="android:allowBackup"
         tools:targetApi="31">
+        <activity
+            android:name=".activity_huawei_signin"
+            android:exported="false" />
         <activity
             android:name=".SigninActivity"
             android:exported="false" />
