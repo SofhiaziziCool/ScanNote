@@ -89,7 +89,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         mNoteContentTv = findViewById(R.id.note_content_tv);
         saveBtn = findViewById(R.id.save_btn);
         setImage = findViewById(R.id.take_pic);
-        imageView = (ImageView) findViewById(R.id.imageView);
+        imageView = findViewById(R.id.imageView);
 
         analyseImage = findViewById(R.id.analyse_pic);
 
@@ -123,8 +123,8 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             public void onClick(View v) {
                 ImagePicker.with(NoteEditorActivity.this)
                         .crop()	    			//Crop image(Optional), Check Customization for more option
-                        .compress(1024)			//Final image size will be less than 1 MB(Optional)
-                        .maxResultSize(1080, 1080)	//Final image resolution will be less than 1080 x 1080(Optional)
+                        .compress(10240)			//Final image size will be less than 1 MB(Optional)
+                        .maxResultSize(5000, 5000)	//Final image resolution will be less than 1080 x 1080(Optional)
                         .start();
             }
         });
@@ -286,7 +286,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
     }
     // TEXT WATCHER END
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
