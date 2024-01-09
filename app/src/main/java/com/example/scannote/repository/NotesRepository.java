@@ -37,6 +37,12 @@ public class NotesRepository {
         new UpdateAsyncTask(getNoteDao()).execute(note);
     }
 
+    public void delete(Note note) {
+        new Thread(() -> {
+            getNoteDao().delete(note);
+        }).start();
+    }
+
     public LiveData<List<Note>> getAllNotes() {
         return getNoteDao().getAllNotes();
     }

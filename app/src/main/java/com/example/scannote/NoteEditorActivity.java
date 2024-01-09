@@ -13,6 +13,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -27,10 +28,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
+import com.example.scannote.database.entity.DBImage;
 import com.example.scannote.database.entity.Note;
 import com.example.scannote.util.DateUtility;
 import com.example.scannote.viewmodel.NoteEditorActivityViewModel;
 import com.github.dhaval2404.imagepicker.ImagePicker;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.mlsdk.MLAnalyzerFactory;
 import com.huawei.hms.mlsdk.common.LensEngine;
@@ -40,8 +43,11 @@ import com.huawei.hms.mlsdk.text.MLLocalTextSetting;
 import com.huawei.hms.mlsdk.text.MLText;
 import com.huawei.hms.mlsdk.text.MLTextAnalyzer;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class NoteEditorActivity extends AppCompatActivity implements TextWatcher {
 
@@ -54,14 +60,15 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     private final static long DELAY_MILLIS = 2000;
 
     //UI Views
-    Button setImage, analyseImage;
-    ImageView imageView;
+    Button analyseImage;
+    ImageView imageView, setImage, deleteNoteBtn;
     EditText mNoteTitleTv, mNoteContentTv;
     Button saveBtn;
 
     //Vars
     private Bitmap bitmap;
     private Uri mImageUri;
+    private final ArrayList<Uri> analyzedImages = new ArrayList<>();
     private final Handler handler = new Handler();
     private NoteEditorActivityViewModel noteEditorActivityViewModel;
     private boolean mIsNewNote;
@@ -69,6 +76,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     private Note mFinalNote;
     private final Runnable saveNoteRunnable = this::saveNoteChanges;
     ActivityResultLauncher<String> imagePickerActivityLauncher;
+    private int noteId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,25 +92,28 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         saveBtn = findViewById(R.id.save_btn);
         setImage = findViewById(R.id.take_pic);
         imageView = findViewById(R.id.imageView);
-
         analyseImage = findViewById(R.id.analyse_pic);
+        deleteNoteBtn = findViewById(R.id.delete_note);
+        deleteNoteBtn.setOnClickListener(v -> {
+            deleteNote();
+        });
 
         imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
-            mImageUri = uri;
-            if (uri != null) {
-                Glide
-                        .with(this)
-                        .load(mImageUri.getPath())
-                        .centerCrop()
-                        .into(imageView);
-
-                try {
-                    ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), mImageUri);
-                    bitmap = ImageDecoder.decodeBitmap(source);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+//            mImageUri = uri;
+//            if (uri != null) {
+//                Glide
+//                        .with(this)
+//                        .load(mImageUri)
+//                        .centerCrop()
+//                        .into(imageView);
+//
+//                try {
+//                    ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), mImageUri);
+//                    bitmap = ImageDecoder.decodeBitmap(source);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
         });
 
         if (checkForIntent()) {
@@ -117,6 +128,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             setEditedNoteProperties();
             saveNoteChanges();
         });
+
         //setImage.setOnClickListener(v -> requestImagePicker());
         setImage.setOnClickListener(v -> ImagePicker.with(NoteEditorActivity.this)
                 .crop()	    			//Crop image(Optional), Check Customization for more option
@@ -124,12 +136,43 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
                 .maxResultSize(5000, 5000)	//Final image resolution will be less than 1080 x 1080(Optional)
                 .start());
 
-        analyseImage.setOnClickListener(v -> testAnalyze());
+        analyseImage.setOnClickListener(v -> analyzeImage());
 
         if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
             requestCameraPermission();
         }
 
+        noteEditorActivityViewModel.getAllImages(noteId).observe(this, this::updateImages);
+
+    }
+
+    // TODO: delete a note
+    private void deleteNote() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete Note")
+                .setMessage("Are you sure?")
+                .setPositiveButton("Yes", (dialogInterface, i) -> {
+                    if (!mIsNewNote) {
+                        noteEditorActivityViewModel.deleteNote(mInitialNote);
+                        this.finish();
+                    }else {
+                        Toast.makeText(this, "Can't delete a new note", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                    dialogInterface.dismiss();
+                })
+                .show();
+    }
+
+    private void updateImages(List<DBImage> dbImages) {
+        for (DBImage dbImage : dbImages) {
+            Glide
+                .with(this)
+                .load(new File(dbImage.getLocalPath()))
+                .centerCrop()
+                .into(imageView);
+        }
     }
 
     // NOTE START
@@ -138,6 +181,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             mInitialNote = getIntent().getParcelableExtra(MainActivity.SELECTED_NOTE);
             mFinalNote = getIntent().getParcelableExtra(MainActivity.SELECTED_NOTE);
             mIsNewNote = false;
+            noteId = mInitialNote.getId();
             return true;
         }
         mIsNewNote = true;
@@ -151,6 +195,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             noteEditorActivityViewModel.createNewNote(mFinalNote, noteId -> {
                 mFinalNote.setId(noteId);
                 mIsNewNote = false;
+                this.noteId = mFinalNote.getId();
             });
         } else {
             Toast.makeText(this, "Updating note...", Toast.LENGTH_SHORT).show();
@@ -213,11 +258,12 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
 
     //HUAWEI ML KIT
-    public void testAnalyze() {
+    public void analyzeImage() {
         if (bitmap == null) {
             Toast.makeText(this, "Couldn't analyze image. Try again.", Toast.LENGTH_SHORT).show();
             return;
         }
+        analyseImage.setVisibility(View.GONE);
         Context context = getApplicationContext();
         MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
         MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
@@ -239,7 +285,17 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
         MLFrame frame = MLFrame.fromBitmap(bitmap);
         Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(text -> mNoteContentTv.setText(text.getStringValue())).addOnFailureListener(e -> {
+        task.addOnSuccessListener(mlText -> {
+            // Store initial data in the Note content editText
+            String initialNoteContentTvText = mNoteContentTv.getText().toString();
+            String textFromAnalyzedImage = mlText.getStringValue();
+            String finalTextToShow = initialNoteContentTvText + " " + textFromAnalyzedImage;
+            // update the editText
+            mNoteContentTv.setText(finalTextToShow);
+           // TODO: [Room] Store analyzed Image
+            DBImage dbImage = new DBImage(noteId, mImageUri.getPath(),null);
+            noteEditorActivityViewModel.saveImageToLocalDb(dbImage);
+        }).addOnFailureListener(e -> {
             Toast.makeText(context, "Processing logic for recognition failure", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "testAnalyze: " + e.getMessage() );
             // Processing logic for recognition failure.
@@ -290,12 +346,15 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (data != null) {
+            saveNoteChanges();
             Uri uri = data.getData();
+            mImageUri = uri;
             imageView.setImageURI(uri);
             if (uri != null) {
                 try {
                     ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), uri);
                     bitmap = ImageDecoder.decodeBitmap(source);
+                    analyseImage.setVisibility(View.VISIBLE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
