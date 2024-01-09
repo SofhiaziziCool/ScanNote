@@ -20,8 +20,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -64,7 +62,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
     //UI Views
     Button analyseImage;
-    ImageView imageView, setImage, deleteNoteBtn, exportNoteBtn;
+    ImageView imageView, setImage, deleteNoteBtn, exportNoteBtn, backBtn;
     EditText mNoteTitleTv, mNoteContentTv;
     Button saveBtn;
 
@@ -78,7 +76,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     private Note mInitialNote;
     private Note mFinalNote;
     private final Runnable saveNoteRunnable = this::saveNoteChanges;
-    ActivityResultLauncher<String> imagePickerActivityLauncher;
     private int noteId;
 
     @Override
@@ -96,30 +93,23 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         setImage = findViewById(R.id.take_pic);
         imageView = findViewById(R.id.imageView);
         analyseImage = findViewById(R.id.analyse_pic);
+
         deleteNoteBtn = findViewById(R.id.delete_note);
         deleteNoteBtn.setOnClickListener(v -> {
             deleteNote();
         });
+
         exportNoteBtn = findViewById(R.id.export_note);
         exportNoteBtn.setOnClickListener(v -> createNoteFile(mFinalNote.getTitle() +".txt", mFinalNote.getTitle(), mFinalNote.getContents()));
 
-        imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
-//            mImageUri = uri;
-//            if (uri != null) {
-//                Glide
-//                        .with(this)
-//                        .load(mImageUri)
-//                        .centerCrop()
-//                        .into(imageView);
-//
-//                try {
-//                    ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), mImageUri);
-//                    bitmap = ImageDecoder.decodeBitmap(source);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+        backBtn = findViewById(R.id.back_btn);
+        backBtn.setOnClickListener(v -> {
+            if (!mIsNewNote) {
+                saveNoteChanges();
+            }
+            this.finish();
         });
+
 
         if (checkForIntent()) {
             setInitialNoteProperties();
@@ -293,10 +283,6 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     }
 
     // PERMISSION END
-
-    public void requestImagePicker() {
-        imagePickerActivityLauncher.launch("image/*");
-    }
 
 
     //HUAWEI ML KIT
