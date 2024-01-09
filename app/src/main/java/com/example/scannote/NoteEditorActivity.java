@@ -5,23 +5,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
+import android.graphics.ImageDecoder;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -45,9 +41,7 @@ import com.huawei.hms.mlsdk.text.MLText;
 import com.huawei.hms.mlsdk.text.MLTextAnalyzer;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Objects;
 
 public class NoteEditorActivity extends AppCompatActivity implements TextWatcher {
 
@@ -95,13 +89,19 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
         imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
             mImageUri = uri;
-            Log.d(TAG, "onCreate: " + uri.getPath());
             if (uri != null) {
                 Glide
                         .with(this)
                         .load(mImageUri.getPath())
                         .centerCrop()
                         .into(imageView);
+
+                try {
+                    ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), mImageUri);
+                    bitmap = ImageDecoder.decodeBitmap(source);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -118,16 +118,11 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             saveNoteChanges();
         });
         //setImage.setOnClickListener(v -> requestImagePicker());
-        setImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ImagePicker.with(NoteEditorActivity.this)
-                        .crop()	    			//Crop image(Optional), Check Customization for more option
-                        .compress(10240)			//Final image size will be less than 1 MB(Optional)
-                        .maxResultSize(5000, 5000)	//Final image resolution will be less than 1080 x 1080(Optional)
-                        .start();
-            }
-        });
+        setImage.setOnClickListener(v -> ImagePicker.with(NoteEditorActivity.this)
+                .crop()	    			//Crop image(Optional), Check Customization for more option
+                .compress(10240)			//Final image size will be less than 1 MB(Optional)
+                .maxResultSize(5000, 5000)	//Final image resolution will be less than 1080 x 1080(Optional)
+                .start());
 
         analyseImage.setOnClickListener(v -> testAnalyze());
 
@@ -219,6 +214,10 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
     //HUAWEI ML KIT
     public void testAnalyze() {
+        if (bitmap == null) {
+            Toast.makeText(this, "Couldn't analyze image. Try again.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Context context = getApplicationContext();
         MLTextAnalyzer analyzer = new MLTextAnalyzer.Factory(context).setLocalOCRMode(MLLocalTextSetting.OCR_DETECT_MODE).setLanguage("zh").create();
         MLTextAnalyzer.Factory factory = new MLTextAnalyzer.Factory(context);
@@ -240,7 +239,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
         MLFrame frame = MLFrame.fromBitmap(bitmap);
         Task<MLText> task = analyzer1.asyncAnalyseFrame(frame);
-        task.addOnSuccessListener(text -> Toast.makeText(NoteEditorActivity.this, text.getStringValue(), Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> {
+        task.addOnSuccessListener(text -> mNoteContentTv.setText(text.getStringValue())).addOnFailureListener(e -> {
             Toast.makeText(context, "Processing logic for recognition failure", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "testAnalyze: " + e.getMessage() );
             // Processing logic for recognition failure.
@@ -290,7 +289,17 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Uri uri = data.getData();
-        imageView.setImageURI(uri);
+        if (data != null) {
+            Uri uri = data.getData();
+            imageView.setImageURI(uri);
+            if (uri != null) {
+                try {
+                    ImageDecoder.Source source = ImageDecoder.createSource(this.getContentResolver(), uri);
+                    bitmap = ImageDecoder.decodeBitmap(source);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
