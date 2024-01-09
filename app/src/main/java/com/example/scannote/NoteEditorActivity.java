@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -44,7 +45,9 @@ import com.huawei.hms.mlsdk.text.MLText;
 import com.huawei.hms.mlsdk.text.MLTextAnalyzer;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +64,7 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
     //UI Views
     Button analyseImage;
-    ImageView imageView, setImage, deleteNoteBtn;
+    ImageView imageView, setImage, deleteNoteBtn, exportNoteBtn;
     EditText mNoteTitleTv, mNoteContentTv;
     Button saveBtn;
 
@@ -97,6 +100,8 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
         deleteNoteBtn.setOnClickListener(v -> {
             deleteNote();
         });
+        exportNoteBtn = findViewById(R.id.export_note);
+        exportNoteBtn.setOnClickListener(v -> createNoteFile(mFinalNote.getTitle() +".txt", mFinalNote.getTitle(), mFinalNote.getContents()));
 
         imagePickerActivityLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
 //            mImageUri = uri;
@@ -129,16 +134,15 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
             saveNoteChanges();
         });
 
-        //setImage.setOnClickListener(v -> requestImagePicker());
         setImage.setOnClickListener(v -> ImagePicker.with(NoteEditorActivity.this)
-                .crop()	    			//Crop image(Optional), Check Customization for more option
-                .compress(10240)			//Final image size will be less than 1 MB(Optional)
-                .maxResultSize(5000, 5000)	//Final image resolution will be less than 1080 x 1080(Optional)
+                .crop()
+                .compress(10240)
+                .maxResultSize(5000, 5000)
                 .start());
 
         analyseImage.setOnClickListener(v -> analyzeImage());
 
-        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
             requestCameraPermission();
         }
 
@@ -146,7 +150,45 @@ public class NoteEditorActivity extends AppCompatActivity implements TextWatcher
 
     }
 
-    // TODO: delete a note
+    private void createNoteFile(String fileName, String heading, String content) {
+        try {
+            File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "ScanNote");
+            if (!folder.exists()) {
+                if (!folder.mkdir()) {
+                    // Handle folder creation failure
+                    Toast.makeText(this, "Failed to create folder.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+
+            File file = new File(folder, fileName);
+            if (!file.exists()) {
+                if (!file.createNewFile()) {
+                    // Handle file creation failure
+                    Toast.makeText(this, "Failed to create file.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream);
+
+            // Write note to file
+            outputStreamWriter.write(heading + "\n\n");
+            outputStreamWriter.write(content);
+
+            // Close streams
+            outputStreamWriter.close();
+            fileOutputStream.close();
+            Toast.makeText(this, fileName + " saved successfully to document/ScanNote", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle any exceptions
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+
     private void deleteNote() {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Note")
